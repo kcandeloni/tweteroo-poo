@@ -2,13 +2,16 @@ import chalk from 'chalk';
 import cors from 'cors';
 import express, { json } from 'express';
 
+import { listTweets } from './models/listTweets.js';
+import { listUsers } from './models/listUsers.js';
+
 const app = express();
 
 app.use(cors());
 app.use(json());
 
-const usuarios = [];
-const tweets = [];
+const usuarios = new listUsers();
+const tweets = new listTweets();
 
 app.post('/sign-up', (req, res) => {
   const { username, avatar } = req.body;
@@ -18,7 +21,7 @@ app.post('/sign-up', (req, res) => {
     return;
   }
 
-  usuarios.push({ username, avatar });
+  usuarios.newUser({ username, avatar })
 
   res.status(200).send('OK deu tudo certo');
 });
@@ -30,9 +33,8 @@ app.post('/tweets', (req, res) => {
     return res.status(400).send('Todos os campos são obrigatórios!');
   }
 
-  const { avatar } = usuarios.find(user => user.username === username);
-
-  tweets.push({ username, tweet, avatar });
+  const { avatar } = usuarios.getUserByName(username);
+  tweets.newTweet({ username, tweet, avatar });
 
   res.status(201).send('OK, seu tweet foi criado');
 });
@@ -40,7 +42,7 @@ app.post('/tweets', (req, res) => {
 app.get('/tweets/:username', (req, res) => {
   const { username } = req.params;
 
-  const tweetsDoUsuario = tweets.filter(t => t.username === username);
+  const tweetsDoUsuario = tweets.getTweets().filter(t => t.username === username);
 
   res.status(200).send(tweetsDoUsuario);
 });
@@ -56,15 +58,14 @@ app.get('/tweets', (req, res) => {
   const start = (page - 1) * limite;
   const end = page * limite;
 
-  if (tweets.length <= 10) {
+  if (tweets.getTweets().length <= 10) {
     return res.send(reverseTweets());
   }
-
-  res.status(200).send([...tweets].reverse().slice(start, end));
+  res.status(200).send(tweets.getTweets().reverse().slice(start, end));
 });
 
 function reverseTweets() {
-  return [...tweets].reverse();
+  return [...tweets.getTweets()].reverse();
 }
 
 app.listen(5001, () => {

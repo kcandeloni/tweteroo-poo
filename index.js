@@ -4,6 +4,8 @@ import express, { json } from 'express';
 
 import { listTweets } from './models/listTweets.js';
 import { listUsers } from './models/listUsers.js';
+import { User } from './models/user.js';
+import { Tweet } from './models/tweet.js';
 
 const app = express();
 
@@ -16,15 +18,16 @@ const tweets = new listTweets();
 app.post('/sign-up', (req, res) => {
   const { username, avatar } = req.body;
 
-  if (!username || !avatar) {
+  const user = new User({ username, avatar });
+  if (user.isInvalid()) {
     res.status(400).send('Todos os campos são obrigatórios!');
     return;
   }
-
-  usuarios.newUser({ username, avatar })
+  usuarios.newUser(user.getUser())
 
   res.status(200).send('OK deu tudo certo');
-});
+}
+);
 
 app.post('/tweets', (req, res) => {
   const { tweet, username } = req.body;
@@ -32,7 +35,7 @@ app.post('/tweets', (req, res) => {
   if (!username || !tweet) {
     return res.status(400).send('Todos os campos são obrigatórios!');
   }
-
+  console.log(usuarios.getUsers())
   const { avatar } = usuarios.getUserByName(username);
   tweets.newTweet({ username, tweet, avatar });
 
